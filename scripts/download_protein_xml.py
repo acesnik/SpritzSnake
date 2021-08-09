@@ -3,6 +3,8 @@
 import requests
 import sys
 
+format = sys.argv[1]
+
 BASE = 'http://www.uniprot.org'
 KB_ENDPOINT = '/uniprot/'
 TOOL_ENDPOINT = '/uploadlists/'
@@ -13,7 +15,7 @@ query = 'proteome:UP000005640'
 
 payload = {
     'query': query,
-    'format': 'xml',
+    'format': format,
     # 'columns': 'id,entry_name,reviewed,protein_names,organism,ec,keywords',
     }
 

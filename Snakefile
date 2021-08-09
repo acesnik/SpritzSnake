@@ -13,12 +13,22 @@ REFSTAR_PREFIX = f"data/ensembl/Homo_sapiens.{GENEMODEL_VERSION}RsemStar/RsemSta
 REFSTAR_FOLDER = f"data/ensembl/Homo_sapiens.{GENEMODEL_VERSION}RsemStar/"
 REF_PREFIX = f"data/ensembl/Homo_sapiens.{GENEMODEL_VERSION}Rsem/RsemReference"
 REF_FOLDER = f"data/ensembl/Homo_sapiens.{GENEMODEL_VERSION}Rsem/"
+UNIPROTXML="data/uniprot/human.protein.xml.gz" #"data/Homo_sapiens_202022.xml.gz"
+UNIPROTFASTA="data/uniprot/human.protein.fasta" #"data/Homo_sapiens_202022.xml.gz"
 
 configfile: "config.yaml"
+
+q=[0,10,20,30]
 
 def check_dir():
     if ('analysisDirectory' in config and config["analysisDirectory"] is not None) and len(config["analysisDirectory"]) > 0:
         return True
+    return False
+
+def check_sra():
+    if 'sra' in config and config["sra"] is not None:
+        if len(config["sra"]) > 0:
+            return True
     return False
 
 def output(wildcards):
@@ -35,12 +45,12 @@ def output(wildcards):
 
 rule all:
     input:
-        "data/combined.spritz.snpeff.protein.withmods.xml.gz",
+        expand("data/{q}/combined.spritz.snpeff.protein.withmods.xml.gz", q=q)
         # "data/combined.spritz.noindels.snpeff.protein.withmods.xml.gz",
-        "data/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+        # "data/combined.spritz.isoformvariants.protein.withmods.xml.gz",
         # "data/combined.spritz.noindels.isoformvariants.protein.withmods.xml.gz",
-        "data/combined.spritz.isoform.protein.withmods.xml.gz", # no variants
-        "data/" + GENEMODEL_VERSION_SNPEFF + ".protein.withmods.xml.gz", # no variants
+        # "data/combined.spritz.isoform.protein.withmods.xml.gz", # no variants
+        # "data/" + GENEMODEL_VERSION_SNPEFF + ".protein.withmods.xml.gz", # no variants
         # "clean_snpeff"
 
 rule clean:
@@ -56,4 +66,4 @@ include: "rules/isoforms.smk"
 include: "rules/proteogenomics.smk"
 include: "rules/qc.smk"
 include: "rules/quant.smk"
-include: "rules/fusion.smk"
+# include: "rules/fusion.smk"

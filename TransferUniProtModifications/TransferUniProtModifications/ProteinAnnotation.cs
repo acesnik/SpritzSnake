@@ -76,7 +76,7 @@ namespace TransferUniProtModifications
         /// <param name="proteogenomicProteins"></param>
         /// <param name="uniprotProteins"></param>
         /// <returns></returns>
-        public static List<Protein> CombineAndAnnotateProteins(List<Protein> uniprotProteins, List<Protein> proteogenomicProteins)
+        public static List<Protein> CombineAndAnnotateProteins(List<Protein> uniprotProteins, List<Protein> proteogenomicProteins, bool printWithoutSensitiveInfo)
         {
             List<Protein> newProteins = new List<Protein>();
             Dictionary<string, List<Protein>> dictUniprot = ProteinDictionary(uniprotProteins);
@@ -106,8 +106,8 @@ namespace TransferUniProtModifications
                     fullName: uniprot != null ? uniprot.FullName : pgProtein.FullName, //comma-separated
                     isDecoy: pgProtein.IsDecoy,
                     isContaminant: pgProtein.IsContaminant,
-                    sequenceVariations: pgProtein.SequenceVariations.OrderBy(v => v.OneBasedBeginPosition).ToList(),
-                    spliceSites: pgProtein.SpliceSites.OrderBy(s => s.OneBasedBeginPosition).ToList(),
+                    sequenceVariations: printWithoutSensitiveInfo ? new List<SequenceVariation>() : pgProtein.SequenceVariations.OrderBy(v => v.OneBasedBeginPosition).ToList(),
+                    spliceSites: printWithoutSensitiveInfo ? new List<SpliceSite>() : pgProtein.SpliceSites.OrderBy(s => s.OneBasedBeginPosition).ToList(),
 
                     // combine these
                     geneNames: (uniprot != null ? uniprot.GeneNames : new List<Tuple<string, string>>()).Concat(pgProtein.GeneNames).ToList(),

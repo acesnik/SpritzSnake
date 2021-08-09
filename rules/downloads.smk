@@ -7,13 +7,13 @@ rule download_ensembl_references:
         vcfidx="data/ensembl/common_all_20170710.vcf.idx"
     log: "data/ensembl/downloads.log"
     shell:
-        "if [ -e {input.gfa}.gz ] && [ -e {input.gff}.gz ] && [ -e {input.pfa}.gz ] && [ -e {input.vcf}.gz ]; then; "
-            "gunzip -c {input.gfa} > {output.gfa} && "
-            "gunzip -c {input.gff} > {output.gff} && "
-            "gunzip -c {input.pfa} > {output.pfa} && "
-            "gunzip -c {input.vcf} > {output.vcf} && "
+        "if [ -e {output.gfa}.gz ] && [ -e {output.gff}.gz ] && [ -e {output.pfa}.gz ] && [ -e {output.vcf}.gz ]; then "
+            "gunzip -c {output.gfa}.gz > {output.gfa} && "
+            "gunzip -c {output.gff}.gz > {output.gff} && "
+            "gunzip -c {output.pfa}.gz > {output.pfa} && "
+            "gunzip -c {output.vcf}.gz > {output.vcf} && "
             "gatk IndexFeatureFile -F {output.vcf}; "
-        "else; "
+        "else "
             "(wget -O - ftp://ftp.ensembl.org/pub/release-" + ENSEMBL_VERSION + "//fasta/homo_sapiens/dna/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.fa.gz | "
             "gunzip -c > {output.gfa} && "
             "wget -O - ftp://ftp.ensembl.org/pub/release-" + ENSEMBL_VERSION + "/gff3/homo_sapiens/Homo_sapiens." + GENEMODEL_VERSION + ".gff3.gz | "
@@ -69,9 +69,11 @@ rule download_sras:
         temp("data/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
         temp("data/{sra,[A-Z0-9]+}_2.fastq")
     log: "data/{sra}.log"
-    threads: 4
+    threads: 6
+    resources:
+        mem_mb=1000
     shell:
-        "fasterq-dump --progress --threads {threads} --split-files --outdir data {wildcards.sra} 2> {log}"
+        "fasterq-dump --progress -b 10MB -c 100MB -m {resources.mem_mb}MB --threads {threads} --split-files --outdir data {wildcards.sra} 2> {log}"
 
 rule compress_fastqs:
     input:

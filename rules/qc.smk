@@ -6,31 +6,32 @@ rule download_adapters:
 
 rule skewer:
     input:
-        fq1="data/{sra}_1.fastq.gz",
-        fq2="data/{sra}_2.fastq.gz",
+        fq1="data/{sra}_1.fastq.gz" if check_sra() else "data/{fq}_R1_001.fastq.gz",
+        fq2="data/{sra}_2.fastq.gz" if check_sra() else "data/{fq}_R2_001.fastq.gz",
         adapters="data/qc/adapters.fa"
     output:
-        fq1="data/trimmed/{sra}.trim_1.fastq.gz",
-        fq2="data/trimmed/{sra}.trim_2.fastq.gz"
+        fq1="data/trimmed{q}/{sra}.trim_1.fastq.gz" if check_sra() else "data/{fq}.trim_1.fastq.gz",
+        fq2="data/trimmed{q}/{sra}.trim_2.fastq.gz" if check_sra() else "data/{fq}.trim_2.fastq.gz",
     threads: 12
-    log: "data/trimmed/{sra}-trimmed.status"
+    log: "data/trimmed{q}/{sra}-trimmed.status"
     params:
-        quality=20
+        quality="{q}",
+        ext="data/trimmed{q}/{sra}" if check_sra() else "data/trimmed/{fq}"
     shell:
-        "skewer -q {params.quality} -o data/trimmed/{wildcards.sra}"
+        "skewer -q {params.quality} -o {params.ext}"
         " -t {threads} -x {input.adapters} {input.fq1} {input.fq2} &> {log} && "
-        "mv data/trimmed/{wildcards.sra}-trimmed-pair1.fastq data/trimmed/{wildcards.sra}.trim_1.fastq &&"
-        "mv data/trimmed/{wildcards.sra}-trimmed-pair2.fastq data/trimmed/{wildcards.sra}.trim_2.fastq &&"
-        "gzip data/trimmed/{wildcards.sra}.trim_*.fastq"
+        "mv {params.ext}-trimmed-pair1.fastq {params.ext}.trim_1.fastq && "
+        "mv {params.ext}-trimmed-pair2.fastq {params.ext}.trim_2.fastq && "
+        "gzip {params.ext}.trim_*.fastq"
 
 rule fastqc_analysis:
     input:
-        fq1=["data/{sra}_1.fastq.gz", "data/trimmed/{sra}.trim_1.fastq.gz"],
-        fq2=["data/{sra}_2.fastq.gz", "data/trimmed/{sra}.trim_2.fastq.gz"]
+        fq1=["data/{sra}_1.fastq.gz", "data/trimmed{q}/{sra}.trim_1.fastq.gz"] if check_sra() else ["data/{fq}_R1_001.fastq.gz", "data/trimmed/{fq}.trim_1.fastq.gz"],
+        fq2=["data/{sra}_2.fastq.gz", "data/trimmed{q}/{sra}.trim_2.fastq.gz"] if check_sra() else ["data/{fq}_R2_001.fastq.gz", "data/trimmed/{fq}.trim_2.fastq.gz"],
     output:
-        fq1=["data/{sra}_1_fastqc.html", "data/{sra}_1_fastqc.zip", "data/trimmed/{sra}.trim_1_fastqc.html", "data/trimmed/{sra}.trim_1_fastqc.zip"],
-        fq2=["data/{sra}_2_fastqc.html", "data/{sra}_2_fastqc.zip", "data/trimmed/{sra}.trim_2_fastqc.html", "data/trimmed/{sra}.trim_2_fastqc.zip"],
-    log: "data/{sra}.fastqc.log"
+        fq1=["data/trimmed{q}/{sra}_1_fastqc.html", "data/trimmed{q}/{sra}_1_fastqc.zip", "data/trimmed{q}/{sra}.trim_1_fastqc.html", "data/trimmed{q}/{sra}.trim_1_fastqc.zip"] if check_sra() else ["data/trimmed/{fq}_R1_001_fastqc.html", "data/trimmed{q}/{fq}_R2_001_fastqc.zip", "data/trimmed{q}/{fq}.trim_1_fastqc.html", "data/trimmed{q}/{fq}.trim_1_fastqc.zip"],
+        fq2=["data/trimmed{q}/{sra}_2_fastqc.html", "data/trimmed{q}/{sra}_2_fastqc.zip", "data/trimmed{q}/{sra}.trim_2_fastqc.html", "data/trimmed{q}/{sra}.trim_2_fastqc.zip"] if check_sra() else ["data/trimmed/{fq}_R1_001_fastqc.html", "data/trimmed{q}/{fq}_R2_001_fastqc.zip", "data/trimmed{q}/{fq}.trim_1_fastqc.html", "data/trimmed{q}/{fq}.trim_1_fastqc.zip"],
+    log: "data/trimmed{q}/{sra}.fastqc.log"
     threads: 6
     shell:
-        "fastqc -t {threads} {input.fq1} {input.fq2} 2> {log}"
+        "fastqc -o data/trimmed{q} -t {threads} {input.fq1} {input.fq2} 2> {log}"

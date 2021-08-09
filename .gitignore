@@ -5,6 +5,7 @@ STAR*
 .snakemake
 ChromosomeMappings
 data/
+dataJurkat/
 AnalysisFolder/
 SnpEff
 tmp

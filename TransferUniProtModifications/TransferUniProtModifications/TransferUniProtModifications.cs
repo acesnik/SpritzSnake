@@ -29,22 +29,26 @@ namespace TransferUniProtModifications
                 .As('f', "fusion_coding_effect")
                 .WithDescription("Coding effects from STAR-Fusion, comma separated");
 
+            p.Setup(arg => arg.PrintWithoutSensitiveInformation)
+                .As('s', "print_without_sensitive_info")
+                .WithDescription("Print without sensitive information");
+
             p.SetupHelp("h", "help")
                 .Callback(text => Console.WriteLine(text));
 
             var result = p.Parse(args);
 
-            TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects));
+            TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects), p.Object.PrintWithoutSensitiveInformation);
             DatabaseSummary(p.Object.UniProtXml, p.Object.SpritzXml);
         }
 
-        public static string TransferModifications(string sourceXmlPath, string destinationXmlPath)
+        public static string TransferModifications(string sourceXmlPath, string destinationXmlPath, bool printWithoutSensitiveInformation)
         {
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(Environment.CurrentDirectory);
             var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, null, out var un);
             string outxml = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withmods.xml");
             var nonVariantProts = ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, null, out un).Select(p => p.NonVariantProtein).Distinct();
-            var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, nonVariantProts.ToList());
+            var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, nonVariantProts.ToList(), printWithoutSensitiveInformation);
             ProteinDbWriter.WriteXmlDatabase(null, newProts, outxml);
             string outfasta = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".fasta");
             var prot = newProts.FirstOrDefault(p => p.Accession.Contains("_"));
@@ -162,6 +166,8 @@ namespace TransferUniProtModifications
             public string ReferenceGeneModel { get; set; }
             public string UniProtXml { get; set; }
             public string FusionCodingEffects { get; set; }
+
+            public bool PrintWithoutSensitiveInformation { get; set; }
         }
     }
 }

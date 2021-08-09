@@ -43,26 +43,20 @@ def input_fq_args(fastqs):
     else:
         return f"-1 {fqs[0]} -2 {fqs[1]}"
 
-def check_sra():
-    if 'sra' in config and config["sra"] is not None:
-        if len(config["sra"]) > 0:
-            return True
-    return False
-
 rule hisat2_align_bam:
     input:
         "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.1.ht2",
-        "data/trimmed/{sra}.trim_1_fastqc.html", # trigger QC analysis after trimming
-        fq1="data/trimmed/{sra}.trim_1.fastq.gz" if check_sra() is True else expand("data/{fq1}_1.fastq.gz", fq1=config["fq1"]),
-        fq2="data/trimmed/{sra}.trim_2.fastq.gz" if check_sra() is True else expand("data/{fq2}_2.fastq.gz", fq2=config["fq2"]),
-        ss="data/ensembl/Homo_sapiens.GRCh38.81.splicesites.txt"
+        # "data/trimmed{q}/{sra}.trim_1_fastqc.html", # trigger QC analysis after trimming
+        fq1="data/trimmed{q}/{sra}.trim_1.fastq.gz" if check_sra() is True else expand("data/trimmed/{fq}.trim_1.fastq.gz", fq=config["fq"]),
+        fq2="data/trimmed{q}/{sra}.trim_2.fastq.gz" if check_sra() is True else expand("data/trimmed/{fq}.trim_2.fastq.gz", fq=config["fq"]),
+        ss="data/ensembl/Homo_sapiens." + GENEMODEL_VERSION + ".splicesites.txt"
     output:
-        sorted="data/{sra}.sorted.bam" if check_sra() is True else "data/{fq1}.sorted.bam",
+        sorted="data/{q}/{sra}.sorted.bam" if check_sra() is True else "data/{fq}.sorted.bam",
     threads: 12
     params:
         compression="9",
-        tempprefix="data/{sra}.sorted" if check_sra() is True else "data/{fq1}.sorted",
-    log: "data/{sra}.hisat2.log" if check_sra() is True else "data/{fq1}.hisat2.log"
+        tempprefix="data/{q}/{sra}.sorted" if check_sra() is True else "data/{fq}.sorted",
+    log: "data/{q}/{sra}.hisat2.log" if check_sra() is True else "data/{fq}.hisat2.log"
     shell:
         "(hisat2 -p {threads} -x data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic -1 {input.fq1} -2 {input.fq2} --known-splicesite-infile {input.ss} | " # align the suckers
         "samtools view -h -F4 - | " # get mapped reads only
@@ -71,14 +65,14 @@ rule hisat2_align_bam:
 
 rule hisat2_merge_bams:
     input:
-        bams=expand("data/{sra}.sorted.bam", sra=config["sra"]) if check_sra() is True else expand("data/{fq1}.sorted.bam", fq1=config["fq1"])
+        bams=expand("data/{{q}}/{sra}.sorted.bam", sra=config["sra"]) if check_sra() is True else expand("data/{fq}.sorted.bam", fq=config["fq"])
     output:
-        sorted="data/combined.sorted.bam",
-        stats="data/combined.sorted.stats"
+        sorted="data/{q}/combined.sorted.bam",
+        stats="data/{q}/combined.sorted.stats"
     params:
         compression="9",
-        tempprefix="data/combined.sorted"
-    log: "data/combined.sorted.log"
+        tempprefix="data/{q}/combined.sorted"
+    log: "data/{q}/combined.sorted.log"
     threads: 12
     resources: mem_mb=16000
     shell:

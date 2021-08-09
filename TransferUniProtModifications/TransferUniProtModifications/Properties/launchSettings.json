@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TransferUniProtModifications": {
+      "commandName": "Project",
+      "commandLineArgs": "-x \"E:\\source\\repos\\SpritzSnake\\data\\uniprot\\human.protein.xml.gz\" -y \"C:\\Users\\Anthony\\Dropbox\\ProjectData\\Spritz\\Validation\\JurkatSkewerQ0\\combined.spritz.snpeff.protein.xml\""
+    }
+  }
+}
